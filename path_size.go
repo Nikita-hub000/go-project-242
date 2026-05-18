@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 )
-func GetPathSize(path string, all bool, recursive bool) (int64, error) {
+func GetPathSize(path string, all bool, recursive bool, human bool) (int64, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		return 0, err
@@ -33,7 +33,7 @@ func GetPathSize(path string, all bool, recursive bool) (int64, error) {
 			continue
 		}
 
-		size, err := GetPathSize(fullPath, all, recursive)
+		size, err := GetPathSize(fullPath, all, recursive, human)
 		if err != nil {
 			return 0, err
 		}

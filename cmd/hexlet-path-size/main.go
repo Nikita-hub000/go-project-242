@@ -41,7 +41,7 @@ func main() {
 				return nil
 			}
 			path := args.First()
-            info, err := pathsize.GetPathSize(path, all, recursive)            
+            info, err := pathsize.GetPathSize(path, all, recursive, human)            
             if err != nil {
                 fmt.Printf("Error: %v\n", err)
                 return nil
