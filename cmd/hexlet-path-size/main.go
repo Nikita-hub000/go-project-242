@@ -49,7 +49,7 @@ func main() {
 			if human {
 				fmt.Printf("%s\t%s\n", info, path)
 			} else {
-				fmt.Printf("%sB\t%s\n", info, path)
+				fmt.Printf("%s\t%s\n", info, path)
 			}
 			return nil
 		},
