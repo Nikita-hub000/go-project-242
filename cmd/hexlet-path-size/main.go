@@ -1,53 +1,15 @@
-package code
+package main
 
 import (
+	pathsize "code"
 	"context"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/urfave/cli/v3"
 )
-func GetPathSize(path string, all bool, recursive bool) (int64, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return 0, err
-	}
 
-	if !info.IsDir() {
-		return info.Size(), nil
-	}
-
-	files, err := os.ReadDir(path)
-	if err != nil {
-		return 0, err
-	}
-
-	answer := int64(0)
-
-	for _, file := range files {
-		if !all && strings.HasPrefix(file.Name(), ".") {
-			continue
-		}
-
-		fullPath := filepath.Join(path, file.Name())
-
-		if file.IsDir() && !recursive {
-			continue
-		}
-
-		size, err := GetPathSize(fullPath, all, recursive)
-		if err != nil {
-			return 0, err
-		}
-
-		answer += size
-	}
-
-	return answer, nil
-}
 func main() {
 	app := &cli.Command{
 		Name:  "hexlet-path-size",
@@ -79,7 +41,7 @@ func main() {
 				return nil
 			}
 			path := args.First()
-            info, err := GetPathSize(path, all, recursive)
+            info, err := pathsize.GetPathSize(path, all, recursive)            
             if err != nil {
                 fmt.Printf("Error: %v\n", err)
                 return nil
