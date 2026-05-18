@@ -41,15 +41,15 @@ func main() {
 				return nil
 			}
 			path := args.First()
-            info, err := pathsize.GetPathSize(path, all, recursive, human)            
+            info, err := pathsize.GetPathSize(path, human, all, recursive )            
             if err != nil {
                 fmt.Printf("Error: %v\n", err)
                 return nil
             }
 			if human {
-				fmt.Printf("%s\t%s\n", ByteCountIEC(info), path)
+				fmt.Printf("%s\t%s\n", info, path)
 			} else {
-				fmt.Printf("%dB\t%s\n", info, path)
+				fmt.Printf("%sB\t%s\n", info, path)
 			}
 			return nil
 		},
@@ -59,15 +59,3 @@ func main() {
 	}
 }
 
-func ByteCountIEC(info int64) string {
-	switch {
-	case info < 1024:
-		return fmt.Sprintf("%dB", info)
-	case info < 1024*1024:
-		return fmt.Sprintf("%.1fKB", float64(info)/1024)
-	case info < 1024*1024*1024:
-		return fmt.Sprintf("%.1fMB", float64(info)/(1024*1024))
-	default:
-		return fmt.Sprintf("%.1fGB", float64(info)/(1024*1024*1024))
-	}
-}

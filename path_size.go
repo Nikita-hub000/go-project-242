@@ -1,11 +1,26 @@
 package code
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
-func GetPathSize(path string, all bool, recursive bool, human bool) (int64, error) {
+
+func GetPathSize(path string, human bool, all bool, recursive bool) (string, error) {
+	size, err := calculateSize(path, all, recursive)
+	if err != nil {
+		return "", err
+	}
+
+	if human {
+		return byteCountIEC(size), nil
+	}
+
+	return fmt.Sprintf("%dB", size), nil
+}
+
+func calculateSize(path string, all bool, recursive bool) (int64, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		return 0, err
@@ -15,31 +30,46 @@ func GetPathSize(path string, all bool, recursive bool, human bool) (int64, erro
 		return info.Size(), nil
 	}
 
-	files, err := os.ReadDir(path)
+	entries, err := os.ReadDir(path)
 	if err != nil {
 		return 0, err
 	}
 
-	answer := int64(0)
+	var total int64
 
-	for _, file := range files {
-		if !all && strings.HasPrefix(file.Name(), ".") {
+	for _, entry := range entries {
+		if !all && strings.HasPrefix(entry.Name(), ".") {
 			continue
 		}
 
-		fullPath := filepath.Join(path, file.Name())
+		fullPath := filepath.Join(path, entry.Name())
 
-		if file.IsDir() && !recursive {
-			continue
+		if entry.IsDir() {
+			if !recursive {
+				continue
+			}
 		}
 
-		size, err := GetPathSize(fullPath, all, recursive, human)
+		size, err := calculateSize(fullPath, all, recursive)
 		if err != nil {
 			return 0, err
 		}
 
-		answer += size
+		total += size
 	}
 
-	return answer, nil
+	return total, nil
+}
+
+func byteCountIEC(size int64) string {
+	switch {
+	case size < 1024:
+		return fmt.Sprintf("%dB", size)
+	case size < 1024*1024:
+		return fmt.Sprintf("%.1fKB", float64(size)/1024)
+	case size < 1024*1024*1024:
+		return fmt.Sprintf("%.1fMB", float64(size)/(1024*1024))
+	default:
+		return fmt.Sprintf("%.1fGB", float64(size)/(1024*1024*1024))
+	}
 }
