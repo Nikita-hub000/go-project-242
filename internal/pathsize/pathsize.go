@@ -8,16 +8,16 @@ import (
 )
 
 func Calculate(path string, includeHidden, recursive bool) (int64, error) {
-	return calculate(path, includeHidden, recursive)
-}
-
-func calculate(path string, includeHidden, recursive bool) (int64, error) {
 	info, err := os.Lstat(path)
 	if err != nil {
 		return 0, fmt.Errorf("stat path %q: %w", path, err)
 	}
 
-	if info.Mode()&os.ModeSymlink != 0 {
+	return calculatePath(path, info, includeHidden, recursive)
+}
+
+func calculatePath(path string, info os.FileInfo, includeHidden, recursive bool) (int64, error) {
+	if isSymlink(info) {
 		return info.Size(), nil
 	}
 
@@ -33,37 +33,42 @@ func calculate(path string, includeHidden, recursive bool) (int64, error) {
 	var total int64
 
 	for _, entry := range entries {
-		if !includeHidden && strings.HasPrefix(entry.Name(), ".") {
+		if shouldSkipEntry(entry, includeHidden, recursive) {
 			continue
 		}
 
-		entryPath := filepath.Join(path, entry.Name())
-		entryInfo, err := os.Lstat(entryPath)
+		size, err := calculateEntry(filepath.Join(path, entry.Name()), includeHidden, recursive)
 		if err != nil {
-			return 0, fmt.Errorf("stat entry %q: %w", entryPath, err)
+			return 0, err
 		}
 
-		if entryInfo.Mode()&os.ModeSymlink != 0 {
-			total += entryInfo.Size()
-			continue
-		}
-
-		if entryInfo.IsDir() {
-			if !recursive {
-				continue
-			}
-
-			size, err := calculate(entryPath, includeHidden, recursive)
-			if err != nil {
-				return 0, err
-			}
-
-			total += size
-			continue
-		}
-
-		total += entryInfo.Size()
+		total += size
 	}
 
 	return total, nil
+}
+
+func calculateEntry(path string, includeHidden, recursive bool) (int64, error) {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return 0, fmt.Errorf("stat entry %q: %w", path, err)
+	}
+
+	return calculatePath(path, info, includeHidden, recursive)
+}
+
+func shouldSkipEntry(entry os.DirEntry, includeHidden, recursive bool) bool {
+	return (isHidden(entry) && !includeHidden) || (isDirectory(entry) && !recursive)
+}
+
+func isHidden(entry os.DirEntry) bool {
+	return strings.HasPrefix(entry.Name(), ".")
+}
+
+func isDirectory(entry os.DirEntry) bool {
+	return entry.IsDir()
+}
+
+func isSymlink(info os.FileInfo) bool {
+	return info.Mode()&os.ModeSymlink != 0
 }

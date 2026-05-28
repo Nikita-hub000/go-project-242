@@ -6,6 +6,8 @@ test:
 
 lint:
 	golangci-lint run
+	golangci-lint fmt --diff
 
 lint-fix:
 	golangci-lint run --fix
+	golangci-lint fmt

@@ -2,17 +2,23 @@ package sizefmt
 
 import "fmt"
 
+const unitBase int64 = 1024
+
+var iecUnits = []string{"B", "KB", "MB", "GB", "TB", "PB", "EB"}
+
 func BytesIEC(size int64) string {
-	switch {
-	case size < 1024:
+	if size < unitBase {
 		return fmt.Sprintf("%dB", size)
-	case size < 1024*1024:
-		return fmt.Sprintf("%.1fKB", float64(size)/1024)
-	case size < 1024*1024*1024:
-		return fmt.Sprintf("%.1fMB", float64(size)/(1024*1024))
-	default:
-		return fmt.Sprintf("%.1fGB", float64(size)/(1024*1024*1024))
 	}
+
+	value := float64(size)
+	unitIdx := 0
+	for value >= float64(unitBase) && unitIdx < len(iecUnits)-1 {
+		value /= float64(unitBase)
+		unitIdx++
+	}
+
+	return fmt.Sprintf("%.1f%s", value, iecUnits[unitIdx])
 }
 
 func BytesRaw(size int64) string {

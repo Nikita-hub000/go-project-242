@@ -1,4 +1,5 @@
 /bin/
+/hexlet-path-size
 .gocache/
 *.exe
 *.test

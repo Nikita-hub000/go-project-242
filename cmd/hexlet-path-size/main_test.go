@@ -30,8 +30,32 @@ func TestCLIRequiresPath(t *testing.T) {
 		t.Fatalf("expected empty stdout, got %q", stdout)
 	}
 
-	if !strings.Contains(stderr, "path is required") {
-		t.Fatalf("expected stderr to contain %q, got %q", "path is required", stderr)
+	if !strings.Contains(stderr, "exactly one path argument is required") {
+		t.Fatalf("expected stderr to contain %q, got %q", "exactly one path argument is required", stderr)
+	}
+}
+
+func TestCLIRejectsMultiplePaths(t *testing.T) {
+	stdout, stderr, err := runCLI(t, ".", "..")
+	if err == nil {
+		t.Fatal("expected non-zero exit status")
+	}
+
+	var exitErr *exec.ExitError
+	if !asExitError(err, &exitErr) {
+		t.Fatalf("expected ExitError, got %T", err)
+	}
+
+	if exitErr.ExitCode() != 1 {
+		t.Fatalf("exit code = %d, want 1", exitErr.ExitCode())
+	}
+
+	if stdout != "" {
+		t.Fatalf("expected empty stdout, got %q", stdout)
+	}
+
+	if !strings.Contains(stderr, "exactly one path argument is required") {
+		t.Fatalf("expected stderr to contain %q, got %q", "exactly one path argument is required", stderr)
 	}
 }
 
@@ -92,6 +116,21 @@ func TestCLIAllAndRecursiveFlags(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "8B") {
 		t.Fatalf("expected recursive+all output 8B, got %q", stdout)
+	}
+}
+
+func TestCLIHelpShowsRequiredPath(t *testing.T) {
+	stdout, stderr, err := runCLI(t, "--help")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if stderr != "" {
+		t.Fatalf("expected empty stderr, got %q", stderr)
+	}
+
+	if !strings.Contains(stdout, "<path>") {
+		t.Fatalf("expected help output to contain %q, got %q", "<path>", stdout)
 	}
 }
 

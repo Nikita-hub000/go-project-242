@@ -9,3 +9,7 @@ linters:
     - staticcheck
     - unused
     - errcheck
+
+formatters:
+  enable:
+    - goimports

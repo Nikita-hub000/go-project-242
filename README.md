@@ -8,24 +8,24 @@ CLI-утилита для расчёта размера файла или дир
 ## Установка
 
 ```bash
-go build -o bin/hexlet-path-size ./cmd/hexlet-path-size
+go build ./cmd/hexlet-path-size
 ```
 
 ## Использование
 
 ```bash
-./bin/hexlet-path-size [flags] <path>
+./hexlet-path-size [flags] <path>
 ```
 
 Пример:
 
 ```bash
-./bin/hexlet-path-size --recursive --all --human ./testdata
+./hexlet-path-size --recursive --all --human .
 ```
 
 ## Флаги
 
-- `--human`, `-H` - вывести размер в человекочитаемом формате (`KB`, `MB`, `GB`)
+- `--human`, `-H` - вывести размер в человекочитаемом формате (`KB`, `MB`, `GB`, `TB`, `PB`, `EB`)
 - `--all`, `-a` - учитывать скрытые файлы и директории
 - `--recursive`, `-r` - рекурсивно обходить вложенные директории
 
