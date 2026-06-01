@@ -10,15 +10,14 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-const pathArgumentError = "exactly one path argument is required"
+const pathArgumentMessage = "exactly one path argument is required"
 
 func New(stdout io.Writer) *cli.Command {
 	return &cli.Command{
-		Name:           "hexlet-path-size",
-		Usage:          "print size of a file or directory",
-		ArgsUsage:      "<path>",
-		Writer:         stdout,
-		ExitErrHandler: returnExitError,
+		Name:      "hexlet-path-size",
+		Usage:     "print size of a file or directory",
+		ArgsUsage: "<path>",
+		Writer:    stdout,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "human",
@@ -39,7 +38,7 @@ func New(stdout io.Writer) *cli.Command {
 		Action: func(_ context.Context, cmd *cli.Command) error {
 			args := cmd.Args()
 			if args.Len() != 1 {
-				return cli.Exit(pathArgumentError, 1)
+				return cli.Exit(pathArgumentMessage, 1)
 			}
 
 			path := args.First()
@@ -53,5 +52,3 @@ func New(stdout io.Writer) *cli.Command {
 		},
 	}
 }
-
-func returnExitError(_ context.Context, _ *cli.Command, _ error) {}

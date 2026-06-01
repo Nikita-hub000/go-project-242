@@ -3,12 +3,15 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/urfave/cli/v3"
 )
 
 func TestCLIRequiresPath(t *testing.T) {
@@ -131,6 +134,22 @@ func TestCLIHelpShowsRequiredPath(t *testing.T) {
 
 	if !strings.Contains(stdout, "<path>") {
 		t.Fatalf("expected help output to contain %q, got %q", "<path>", stdout)
+	}
+}
+
+func TestExitCodePreservesCLIExitCode(t *testing.T) {
+	err := cli.Exit("boom", 2)
+
+	if code := exitCode(err); code != 2 {
+		t.Fatalf("exitCode(cli.Exit(..., 2)) = %d, want 2", code)
+	}
+}
+
+func TestExitCodeDefaultsToOneForRegularErrors(t *testing.T) {
+	err := fmt.Errorf("wrapped: %w", errors.New("boom"))
+
+	if code := exitCode(err); code != 1 {
+		t.Fatalf("exitCode(regular error) = %d, want 1", code)
 	}
 }
 

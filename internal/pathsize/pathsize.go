@@ -17,11 +17,7 @@ func Calculate(path string, includeHidden, recursive bool) (int64, error) {
 }
 
 func calculatePath(path string, info os.FileInfo, includeHidden, recursive bool) (int64, error) {
-	if isSymlink(info) {
-		return info.Size(), nil
-	}
-
-	if !info.IsDir() {
+	if isSymlink(info) || !info.IsDir() {
 		return info.Size(), nil
 	}
 
