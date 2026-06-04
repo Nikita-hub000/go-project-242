@@ -1,5 +1,5 @@
 build:
-	go build ./cmd/hexlet-path-size
+	go build -o bin/ ./cmd/hexlet-path-size
 
 test:
 	go test ./...

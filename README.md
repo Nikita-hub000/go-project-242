@@ -8,19 +8,19 @@ CLI-утилита для расчёта размера файла или дир
 ## Установка
 
 ```bash
-go build ./cmd/hexlet-path-size
+go build -o bin/ ./cmd/hexlet-path-size
 ```
 
 ## Использование
 
 ```bash
-./hexlet-path-size [flags] <path>
+./bin/hexlet-path-size [flags] <path>
 ```
 
 Пример:
 
 ```bash
-./hexlet-path-size --recursive --all --human .
+./bin/hexlet-path-size --recursive --all --human .
 ```
 
 ## Флаги

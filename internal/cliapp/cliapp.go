@@ -2,10 +2,10 @@ package cliapp
 
 import (
 	"context"
-	"fmt"
 	"io"
 
-	pathsize "code"
+	"code"
+	"code/internal/sizefmt"
 
 	"github.com/urfave/cli/v3"
 )
@@ -42,13 +42,16 @@ func New(stdout io.Writer) *cli.Command {
 			}
 
 			path := args.First()
-			size, err := pathsize.GetPathSize(path, cmd.Bool("recursive"), cmd.Bool("human"), cmd.Bool("all"))
+			size, err := code.GetPathSize(path, cmd.Bool("recursive"), cmd.Bool("human"), cmd.Bool("all"))
 			if err != nil {
 				return cli.Exit(err.Error(), 1)
 			}
 
-			_, err = fmt.Fprintf(cmd.Root().Writer, "%s\t%s\n", size, path)
-			return err
+			if _, err := io.WriteString(cmd.Root().Writer, sizefmt.FormatLine(size, path)); err != nil {
+				return cli.Exit(err.Error(), 1)
+			}
+
+			return nil
 		},
 	}
 }

@@ -1,3 +1,4 @@
+// Package code provides file and directory size calculation utilities.
 package code
 
 import (
@@ -5,6 +6,7 @@ import (
 	"code/internal/sizefmt"
 )
 
+// GetPathSize returns the formatted size of path.
 func GetPathSize(path string, recursive, human, all bool) (string, error) {
 	size, err := pathsize.Calculate(path, all, recursive)
 	if err != nil {
@@ -12,8 +14,8 @@ func GetPathSize(path string, recursive, human, all bool) (string, error) {
 	}
 
 	if human {
-		return sizefmt.BytesIEC(size), nil
+		return sizefmt.FormatIEC(size), nil
 	}
 
-	return sizefmt.BytesRaw(size), nil
+	return sizefmt.FormatRaw(size), nil
 }

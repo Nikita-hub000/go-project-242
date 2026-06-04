@@ -11,6 +11,13 @@ import (
 func TestCalculate(t *testing.T) {
 	tmpDir := t.TempDir()
 
+	const (
+		visibleFileSize = int64(5)
+		hiddenFileSize  = int64(4)
+		nestedFileSize  = int64(7)
+	)
+
+	visibleEntrySize := visibleFileSize
 	mustWriteFile(t, filepath.Join(tmpDir, "file.txt"), "hello")
 	mustWriteFile(t, filepath.Join(tmpDir, ".hidden.txt"), "hide")
 	mustMkdir(t, filepath.Join(tmpDir, "empty"))
@@ -19,6 +26,7 @@ func TestCalculate(t *testing.T) {
 
 	if runtime.GOOS != "windows" {
 		mustSymlink(t, "file.txt", filepath.Join(tmpDir, "file.link"))
+		visibleEntrySize += int64(len("file.txt"))
 	}
 
 	tests := []struct {
@@ -33,7 +41,7 @@ func TestCalculate(t *testing.T) {
 			path:          filepath.Join(tmpDir, "file.txt"),
 			includeHidden: false,
 			recursive:     false,
-			want:          5,
+			want:          visibleFileSize,
 		},
 		{
 			name:          "empty directory",
@@ -47,21 +55,21 @@ func TestCalculate(t *testing.T) {
 			path:          tmpDir,
 			includeHidden: false,
 			recursive:     false,
-			want:          nonRecursiveVisibleSize(t, tmpDir),
+			want:          visibleEntrySize,
 		},
 		{
 			name:          "directory with recursive without hidden",
 			path:          tmpDir,
 			includeHidden: false,
 			recursive:     true,
-			want:          recursiveVisibleSize(t, tmpDir),
+			want:          visibleEntrySize + nestedFileSize,
 		},
 		{
 			name:          "directory with recursive and hidden",
 			path:          tmpDir,
 			includeHidden: true,
 			recursive:     true,
-			want:          recursiveAllSize(t, tmpDir),
+			want:          visibleEntrySize + nestedFileSize + hiddenFileSize,
 		},
 	}
 
@@ -118,50 +126,6 @@ func TestCalculateSymlinkAsArgument(t *testing.T) {
 	if got != linkInfo.Size() {
 		t.Fatalf("Calculate() = %d, want symlink size %d", got, linkInfo.Size())
 	}
-}
-
-func nonRecursiveVisibleSize(t *testing.T, root string) int64 {
-	t.Helper()
-
-	var total int64
-	add := []string{"file.txt"}
-	if runtime.GOOS != "windows" {
-		add = append(add, "file.link")
-	}
-
-	for _, name := range add {
-		info, err := os.Lstat(filepath.Join(root, name))
-		if err != nil {
-			t.Fatalf("Lstat(%q) error = %v", name, err)
-		}
-		total += info.Size()
-	}
-
-	return total
-}
-
-func recursiveVisibleSize(t *testing.T, root string) int64 {
-	t.Helper()
-
-	total := nonRecursiveVisibleSize(t, root)
-	info, err := os.Lstat(filepath.Join(root, "nested", "inside.txt"))
-	if err != nil {
-		t.Fatalf("Lstat(nested/inside.txt) error = %v", err)
-	}
-
-	return total + info.Size()
-}
-
-func recursiveAllSize(t *testing.T, root string) int64 {
-	t.Helper()
-
-	total := recursiveVisibleSize(t, root)
-	info, err := os.Lstat(filepath.Join(root, ".hidden.txt"))
-	if err != nil {
-		t.Fatalf("Lstat(.hidden.txt) error = %v", err)
-	}
-
-	return total + info.Size()
 }
 
 func mustWriteFile(t *testing.T, path, content string) {

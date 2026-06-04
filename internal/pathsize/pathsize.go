@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// Calculate returns the size of path according to hidden-file and recursion options.
 func Calculate(path string, includeHidden, recursive bool) (int64, error) {
 	info, err := os.Lstat(path)
 	if err != nil {
@@ -54,15 +55,11 @@ func calculateEntry(path string, includeHidden, recursive bool) (int64, error) {
 }
 
 func shouldSkipEntry(entry os.DirEntry, includeHidden, recursive bool) bool {
-	return (isHidden(entry) && !includeHidden) || (isDirectory(entry) && !recursive)
+	return (isHidden(entry) && !includeHidden) || (entry.IsDir() && !recursive)
 }
 
 func isHidden(entry os.DirEntry) bool {
 	return strings.HasPrefix(entry.Name(), ".")
-}
-
-func isDirectory(entry os.DirEntry) bool {
-	return entry.IsDir()
 }
 
 func isSymlink(info os.FileInfo) bool {

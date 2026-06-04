@@ -1,7 +1,26 @@
+# Build artifacts
 /bin/
-/hexlet-path-size
-.gocache/
 *.exe
+*.dll
+*.so
+*.dylib
+
+# Test binaries and coverage
 *.test
 *.out
+*.cover
+coverage/
+
+# Go cache
+.gocache/
+
+# IDE and OS
 .DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Profile files
+*.prof
+*.pprof

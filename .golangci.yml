@@ -11,5 +11,9 @@ linters:
     - errcheck
 
 formatters:
+  settings:
+    goimports:
+      local-prefixes:
+        - code
   enable:
     - goimports

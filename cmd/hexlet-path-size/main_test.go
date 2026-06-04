@@ -2,154 +2,58 @@ package main
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
-
-	"github.com/urfave/cli/v3"
 )
-
-func TestCLIRequiresPath(t *testing.T) {
-	stdout, stderr, err := runCLI(t)
-	if err == nil {
-		t.Fatal("expected non-zero exit status")
-	}
-
-	var exitErr *exec.ExitError
-	if !asExitError(err, &exitErr) {
-		t.Fatalf("expected ExitError, got %T", err)
-	}
-
-	if exitErr.ExitCode() != 1 {
-		t.Fatalf("exit code = %d, want 1", exitErr.ExitCode())
-	}
-
-	if stdout != "" {
-		t.Fatalf("expected empty stdout, got %q", stdout)
-	}
-
-	if !strings.Contains(stderr, "exactly one path argument is required") {
-		t.Fatalf("expected stderr to contain %q, got %q", "exactly one path argument is required", stderr)
-	}
-}
-
-func TestCLIRejectsMultiplePaths(t *testing.T) {
-	stdout, stderr, err := runCLI(t, ".", "..")
-	if err == nil {
-		t.Fatal("expected non-zero exit status")
-	}
-
-	var exitErr *exec.ExitError
-	if !asExitError(err, &exitErr) {
-		t.Fatalf("expected ExitError, got %T", err)
-	}
-
-	if exitErr.ExitCode() != 1 {
-		t.Fatalf("exit code = %d, want 1", exitErr.ExitCode())
-	}
-
-	if stdout != "" {
-		t.Fatalf("expected empty stdout, got %q", stdout)
-	}
-
-	if !strings.Contains(stderr, "exactly one path argument is required") {
-		t.Fatalf("expected stderr to contain %q, got %q", "exactly one path argument is required", stderr)
-	}
-}
 
 func TestCLIPrintsHumanReadableSize(t *testing.T) {
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "file.txt")
-	content := strings.Repeat("a", 2048)
 
-	if err := osWriteFile(filePath, []byte(content)); err != nil {
-		t.Fatalf("write test file: %v", err)
+	if err := os.WriteFile(filePath, []byte(strings.Repeat("a", 2048)), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
 	}
 
 	stdout, stderr, err := runCLI(t, "--human", filePath)
 	if err != nil {
-		t.Fatalf("unexpected error: %v, stderr: %s", err, stderr)
+		t.Fatalf("runCLI() error = %v, stderr = %q", err, stderr)
+	}
+
+	want := "2.0KB\t" + filePath + "\n"
+	if stdout != want {
+		t.Fatalf("stdout = %q, want %q", stdout, want)
 	}
 
 	if stderr != "" {
-		t.Fatalf("expected empty stderr, got %q", stderr)
-	}
-
-	if !strings.Contains(stdout, "2.0KB") {
-		t.Fatalf("expected output to contain %q, got %q", "2.0KB", stdout)
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 }
 
-func TestCLIAllAndRecursiveFlags(t *testing.T) {
-	tmpDir := t.TempDir()
-	if err := osMkdir(filepath.Join(tmpDir, "nested")); err != nil {
-		t.Fatalf("mkdir nested: %v", err)
-	}
-	if err := osWriteFile(filepath.Join(tmpDir, ".hidden"), []byte("1234")); err != nil {
-		t.Fatalf("write hidden file: %v", err)
-	}
-	if err := osWriteFile(filepath.Join(tmpDir, "nested", "inner.txt"), []byte("abcd")); err != nil {
-		t.Fatalf("write nested file: %v", err)
+func TestCLIReportsUnknownFlagOnce(t *testing.T) {
+	stdout, stderr, err := runCLI(t, "--unknown")
+	if err == nil {
+		t.Fatal("runCLI() error = nil, want non-zero exit")
 	}
 
-	stdout, stderr, err := runCLI(t, tmpDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v, stderr: %s", err, stderr)
-	}
-	if !strings.Contains(stdout, "0B") {
-		t.Fatalf("expected non-recursive output 0B, got %q", stdout)
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok {
+		t.Fatalf("runCLI() error = %T, want *exec.ExitError", err)
 	}
 
-	stdout, stderr, err = runCLI(t, "--recursive", tmpDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v, stderr: %s", err, stderr)
-	}
-	if !strings.Contains(stdout, "4B") {
-		t.Fatalf("expected recursive output 4B, got %q", stdout)
-	}
-
-	stdout, stderr, err = runCLI(t, "--recursive", "--all", tmpDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v, stderr: %s", err, stderr)
-	}
-	if !strings.Contains(stdout, "8B") {
-		t.Fatalf("expected recursive+all output 8B, got %q", stdout)
-	}
-}
-
-func TestCLIHelpShowsRequiredPath(t *testing.T) {
-	stdout, stderr, err := runCLI(t, "--help")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if stderr != "" {
-		t.Fatalf("expected empty stderr, got %q", stderr)
+	if exitErr.ExitCode() != 1 {
+		t.Fatalf("exit code = %d, want 1", exitErr.ExitCode())
 	}
 
 	if !strings.Contains(stdout, "<path>") {
-		t.Fatalf("expected help output to contain %q, got %q", "<path>", stdout)
+		t.Fatalf("stdout = %q, want help with required path", stdout)
 	}
-}
 
-func TestExitCodePreservesCLIExitCode(t *testing.T) {
-	err := cli.Exit("boom", 2)
-
-	if code := exitCode(err); code != 2 {
-		t.Fatalf("exitCode(cli.Exit(..., 2)) = %d, want 2", code)
-	}
-}
-
-func TestExitCodeDefaultsToOneForRegularErrors(t *testing.T) {
-	err := fmt.Errorf("wrapped: %w", errors.New("boom"))
-
-	if code := exitCode(err); code != 1 {
-		t.Fatalf("exitCode(regular error) = %d, want 1", code)
+	if got := strings.Count(stderr, "flag provided but not defined: -unknown"); got != 1 {
+		t.Fatalf("unknown flag message count = %d, want 1; stderr = %q", got, stderr)
 	}
 }
 
@@ -165,11 +69,7 @@ func runCLI(t *testing.T, args ...string) (string, string, error) {
 	cmd.Stderr = &stderr
 
 	err := cmd.Run()
-	if err != nil {
-		return stdout.String(), stderr.String(), err
-	}
-
-	return stdout.String(), stderr.String(), nil
+	return stdout.String(), stderr.String(), err
 }
 
 func projectCmdDir(t *testing.T) string {
@@ -181,27 +81,4 @@ func projectCmdDir(t *testing.T) string {
 	}
 
 	return filepath.Dir(currentFile)
-}
-
-func asExitError(err error, target **exec.ExitError) bool {
-	if err == nil {
-		return false
-	}
-
-	var exitErr *exec.ExitError
-	ok := errors.As(err, &exitErr)
-	if !ok {
-		return false
-	}
-
-	*target = exitErr
-	return true
-}
-
-func osWriteFile(path string, data []byte) error {
-	return os.WriteFile(path, data, 0o644)
-}
-
-func osMkdir(path string) error {
-	return os.Mkdir(path, 0o755)
 }

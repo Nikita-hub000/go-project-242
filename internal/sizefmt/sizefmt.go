@@ -1,30 +1,47 @@
 package sizefmt
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
-const unitBase int64 = 1024
+const unitBase = 1024.0
 
 var iecUnits = []string{"B", "KB", "MB", "GB", "TB", "PB", "EB"}
 
-func BytesIEC(size int64) string {
-	value := float64(size)
-
-	for idx, unit := range iecUnits {
-		isLastUnit := idx == len(iecUnits)-1
-		if value < float64(unitBase) || isLastUnit {
-			if idx == 0 {
-				return fmt.Sprintf("%d%s", int64(value), unit)
-			}
-
-			return fmt.Sprintf("%.1f%s", value, unit)
-		}
-
-		value /= float64(unitBase)
+// FormatIEC formats size as a human-readable IEC-style value.
+func FormatIEC(size int64) string {
+	if size < 0 {
+		return "0B"
 	}
 
-	return "0B"
+	value := float64(size)
+	unitIndex := 0
+
+	for unitIndex < len(iecUnits)-1 && value >= unitBase {
+		value /= unitBase
+		unitIndex++
+	}
+
+	if unitIndex == 0 {
+		return fmt.Sprintf("%d%s", int64(value), iecUnits[unitIndex])
+	}
+
+	rounded := math.Round(value*10) / 10
+	if rounded >= unitBase && unitIndex < len(iecUnits)-1 {
+		unitIndex++
+		rounded = 1.0
+	}
+
+	return fmt.Sprintf("%.1f%s", rounded, iecUnits[unitIndex])
 }
 
-func BytesRaw(size int64) string {
+// FormatRaw formats size as bytes without unit conversion.
+func FormatRaw(size int64) string {
 	return fmt.Sprintf("%dB", size)
+}
+
+// FormatLine formats one CLI output row with size and path.
+func FormatLine(size, path string) string {
+	return fmt.Sprintf("%s\t%s\n", size, path)
 }
